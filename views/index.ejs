@@ -1,0 +1,48 @@
+<%- include("layouts/header") %>
+
+<div class="container">
+    <div class="row my-4">
+        <div class="col lg-12">
+
+            <% if (message) { %>
+                <div class="alert alert-dismissible fade show alert-<%= message.type %>" role="alert">
+                    <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <strong><%= message.message %></strong>
+                </div>
+            <% } %>
+            
+            <div class="table-responsive">
+                <table class="table table-striped text center my-3">
+                    <thead>
+                        <tr class="table-dark">
+                            <th>ID</th>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th> 
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach((user, i) => { %>  <!-- Loop through users array with index -->
+                            <tr>
+                                <td><%= i + 1 %></td> <!-- Display sequential number starting from 1 -->
+                                <td><img src="/uploads/<%= user.image %>" alt="User Image" style="width: 50px; height: 50px;"></td>
+                                <td><%= user.name %></td>
+                                <td><%= user.email %></td>
+                                <td><%= user.phone %></td>
+                                <td>
+                                    <!-- Use the actual MongoDB _id for edit and delete actions -->
+                                    <a href="/edit/<%= user._id %>" class="text-success"><i class="fas fa-edit fa-lg mx-1"></i></a>
+                                    <a href="/delete/<%= user._id %>" class="text-danger"><i class="fas fa-trash fa-lg mx-1"></i></a>
+                                </td>
+                            </tr>
+                        <% }); %>  <!-- End of loop -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include("layouts/footer") %>
