@@ -4,6 +4,7 @@ require("dotenv").config()
 const express = require("express");
 const mongoose = require('mongoose');
 const session = require('express-session');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,9 +36,17 @@ app.use("/uploads", express.static("uploads"));
 
 // Set template engine
 app.set("view engine", "ejs")
+app.set('views', path.join(__dirname, 'views')); // Make sure the folder name is correct
+
 
 // route prefix
 app.use("", require('./routes/routes')) // This imports the router module from the file routes/routes.js.
+
+// Set Content Security Policy (allowing data URIs for images)
+app.use((req, res, next) => {
+    res.setHeader("Content-Security-Policy", "default-src 'none'; img-src 'self' data:;");
+    next();
+});
 
 app.listen(PORT, () => {
     console.log(`Server started at http://localhost:${PORT}`)
