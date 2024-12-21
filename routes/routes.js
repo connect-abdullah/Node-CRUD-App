@@ -42,17 +42,20 @@ router.post("/add", upload, async (req, res) => {
 router.get("/", (req, res) => {
     User.find()
         .then((users) => {
+            const message = req.session.manager;  // Get the message
+            req.session.manager = null;  // Clear the message immediately
+
             res.render("index", {
                 title: "Home Page",
                 users: users,
-                message: req.session.manager,
+                message: message,  // Pass the message if it exists
             });
-            req.session.manager = null;
         })
         .catch((err) => {
             res.status(500).send("Error retrieving users.");
         });
 });
+
 
 // Rendering Add User Page
 router.get("/add", (req, res) => {
@@ -63,10 +66,14 @@ router.get("/add", (req, res) => {
 router.get("/delete/:id", async (req, res) => {
     try {
         await User.findByIdAndDelete(req.params.id);
+
+        // Set the session message for successful deletion
         req.session.manager = {
             type: "success",
             message: "User Deleted Successfully",
         };
+
+        // Redirect to the home page
         res.redirect("/");
     } catch (err) {
         res.status(500).send("Error deleting user.");
