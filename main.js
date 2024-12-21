@@ -40,12 +40,10 @@ app.use("", require("./routes/routes"));
 
 // Set Content Security Policy
 app.use((req, res, next) => {
-    res.setHeader(
-        "Content-Security-Policy",
-        "default-src 'self'; img-src 'self' https://res.cloudinary.com;"
-    );
+    res.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' https://res.cloudinary.com; script-src 'self' https://code.jquery.com https://cdn.datatables.net; style-src 'self' https://cdn.datatables.net;");
     next();
-});
+  });
+  
 
 app.listen(PORT, () => {
     console.log(`Server started at http://localhost:${PORT}`);
