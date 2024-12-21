@@ -40,9 +40,15 @@ app.use("", require("./routes/routes"));
 
 // Set Content Security Policy
 app.use((req, res, next) => {
-    res.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' https://res.cloudinary.com; script-src 'self' https://code.jquery.com https://cdn.datatables.net; style-src 'self' https://cdn.datatables.net;");
+    res.setHeader("Content-Security-Policy", 
+        "default-src 'self'; " +
+        "img-src 'self' https://res.cloudinary.com; " +
+        "script-src 'self' https://code.jquery.com https://cdn.datatables.net; " +
+        "style-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.datatables.net; " +
+        "font-src 'self' https://cdnjs.cloudflare.com;");
     next();
-  });
+});
+
   
 
 app.listen(PORT, () => {
