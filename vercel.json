@@ -25,7 +25,17 @@
           "value": "no-store"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; img-src 'self' https://res.cloudinary.com https://img.icons8.com; font-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.datatables.net; script-src 'self' https://code.jquery.com https://cdn.datatables.net; report-uri /csp-violation-report-endpoint"
+        }
+      ]
     }
+    
   ],
   "env": {
     "PORT": "4000",
