@@ -1,98 +1,86 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/users");
-const multer = require("multer")
-const fs = require("fs")
+const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../cloudinary");
 
-// Image Upload
-let storage = multer.diskStorage ({
-    destination:  function (req,file,cb) {
-        cb(null,"./uploads")
+// Configure multer storage
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "uploads",
+        format: async () => "jpg",
+        public_id: (req, file) => Date.now(),
     },
-    filename: function (req,file,cb) {
-        cb(null, file.fieldname + "_"+  Date.now()+ "_" + file.originalname)
-    },
-})
+});
 
-let upload = multer({
-    storage: storage, // Use the storage configuration defined above.
-}).single("image")
+const upload = multer({ storage }).single("image");
 
+// Insert User to Database Route
+router.post("/add", upload, async (req, res) => {
+    try {
+        const user = new User({
+            name: req.body.name,
+            email: req.body.email,
+            phone: req.body.phone,
+            image: req.file.path, // Cloudinary URL
+        });
+        await user.save();
 
-// Insert User to Database Route, Using POST REQ
-router.post("/add", upload, (req,res) => {
-    const user = new User ({
-        name: req.body.name,       // User's name from the form data.
-        email: req.body.email,     // User's email from the form data.
-        phone: req.body.phone,     // User's phone from the form data.
-        image: req.file.filename   // The filename of the uploaded image is saved in the "image" field.
-    });
-    user.save()
-    .then(() => {
         req.session.manager = {
             type: "success",
-            message: "User Added Successfully"
+            message: "User Added Successfully",
         };
-        res.redirect("/");  
-    })
-    .catch(err => {
-        res.json({ message: err.message, type: 'danger' });
-    });
-})
+        res.redirect("/");
+    } catch (error) {
+        res.status(500).json({ message: error.message, type: "danger" });
+    }
+});
 
 // Show Users on Page
 router.get("/", (req, res) => {
-    User.find() // Get all users from the database
-        .then(users => {
-            res.render("index", { 
-                title: "Home Page", 
-                users: users, // Pass users to the view
-                message: req.session.manager
+    User.find()
+        .then((users) => {
+            res.render("index", {
+                title: "Home Page",
+                users: users,
+                message: req.session.manager,
             });
-            // Clear the session message after passing it
             req.session.manager = null;
         })
-        .catch(err => {
+        .catch((err) => {
             res.status(500).send("Error retrieving users.");
         });
 });
 
-// Rendering Users HTML File
-router.get("/add", (req,res) => {
-    res.render("add_users", {title: "Add Users"})
-})
-
-// Delete User Route
-router.get("/delete/:id", (req, res) => {
-    const userId = req.params.id;
-    User.findByIdAndDelete(userId)
-        .then(() => {
-            req.session.manager = {
-                type: "success",
-                message: "User Deleted Successfully"
-            };
-            // Clear the session message after passing it
-            req.session.manager = null;
-            res.redirect("/"); // Redirect to home page after deletion
-        })
-        .catch(err => {
-            res.status(500).send("Error deleting user.");
-        });
+// Rendering Add User Page
+router.get("/add", (req, res) => {
+    res.render("add_users", { title: "Add Users" });
 });
 
-// Edit a User 
-router.get("/edit/:id", async (req, res) => {
-    let id = req.params.id;
-
+// Delete User Route
+router.get("/delete/:id", async (req, res) => {
     try {
-        const user = await User.findById(id);
-        if (user == null) {
+        await User.findByIdAndDelete(req.params.id);
+        req.session.manager = {
+            type: "success",
+            message: "User Deleted Successfully",
+        };
+        res.redirect("/");
+    } catch (err) {
+        res.status(500).send("Error deleting user.");
+    }
+});
+
+// Edit a User
+router.get("/edit/:id", async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
             res.redirect("/");
         } else {
-            res.render("edit_users", {
-                title: "Edit User",
-                user: user,
-            });
+            res.render("edit_users", { title: "Edit User", user: user });
         }
     } catch (err) {
         res.redirect("/");
@@ -101,46 +89,28 @@ router.get("/edit/:id", async (req, res) => {
 
 // Update User Route
 router.post("/update/:id", upload, async (req, res) => {
-    let id = req.params.id;
-    let new_image = "";
-
-    if (req.file) {
-        new_image = req.file.filename;
-
-        try {
-            // Delete the old image from the filesystem
-            fs.unlinkSync("./uploads/" + req.body.old_image);
-        } catch (err) {
-            console.log(err);
-        }
-    } else {
-        new_image = req.body.old_image;
-    }
-
     try {
-        // Find the user by ID and update
-        const result = await User.findByIdAndUpdate(id, {
-            name: req.body.name,
-            email: req.body.email,
-            phone: req.body.phone,
-            image: new_image,
-        }, { new: true });
-
-        // If no user found or error occurs, send a message
-        if (!result) {
-            return res.json({ message: "User not found", type: "danger" });
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found", type: "danger" });
         }
 
-        // Set session and redirect after successful update
+        const updatedImage = req.file ? req.file.path : user.image;
+        user.name = req.body.name;
+        user.email = req.body.email;
+        user.phone = req.body.phone;
+        user.image = updatedImage;
+
+        await user.save();
+
         req.session.manager = {
             type: "success",
-            message: "User Updated Successfully!",
+            message: "User Updated Successfully",
         };
         res.redirect("/");
     } catch (err) {
-        res.json({ message: err.message, type: "danger" });
+        res.status(500).json({ message: err.message, type: "danger" });
     }
 });
 
-
-module.exports = router
+module.exports = router;

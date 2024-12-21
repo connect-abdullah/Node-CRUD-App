@@ -2,14 +2,32 @@
   "version": 2,
   "builds": [
     {
-      "src": "main.js", 
+      "src": "main.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)", 
+      "src": "/(.*)",
       "dest": "main.js"
     }
-  ]
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; img-src 'self' https://res.cloudinary.com;"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "PORT": "4000",
+    "DB_URI": "mongodb+srv://admin:admin@crudapp.nglii.mongodb.net/users?retryWrites=true&w=majority&appName=CrudApp",
+    "CLOUD_NAME": "dupmdfwi7",
+    "API_KEY": "982991574727785",
+    "API_SECRET": "g8gkV5InfUlkt_zxjKbcw4THtIY"
+  }
 }
